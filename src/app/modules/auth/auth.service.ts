@@ -3,34 +3,31 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 
 import config from "../../config";
 
-import { TLoginTeacher } from "./auth.interface";
-import { Teacher } from "../user/user.model";
+import { User } from "../user/user.model";
+import { TLoginUser } from "./auth.interface";
 
-const loginTeacher = async (payload: TLoginTeacher) => {
-  const isTeacherExist = await Teacher.findOne({ email: payload.email }).select(
+const loginUser = async (payload: TLoginUser) => {
+  const isUserExist = await User.findOne({ email: payload.email }).select(
     "+password"
   );
 
-  console.log("IS TEACHER EXIST: ", isTeacherExist);
+  console.log("IS USER EXIST: ", isUserExist);
 
-  if (!isTeacherExist) {
-    throw new Error("Teacher not found");
+  if (!isUserExist) {
+    throw new Error("User not found");
   }
 
-  // CHECK IF THE TEACHER IS DELETED
-  const isDeleted = isTeacherExist?.isDeleted;
+  // CHECK IF THE USER IS DELETED
+  const isDeleted = isUserExist?.isDeleted;
 
   if (isDeleted) {
-    throw new Error("Teacher is deleted");
+    throw new Error("User has been deleted");
   }
-
-  console.log("password in payload: ", payload?.password);
-  console.log("password in database: ", isTeacherExist?.password);
 
   // CHECK IF THE PASSWORD IS CORRECT
   const isPasswordCorrect = await bcrypt.compare(
     payload.password,
-    isTeacherExist?.password
+    isUserExist?.password
   );
 
   if (!isPasswordCorrect) {
@@ -40,9 +37,10 @@ const loginTeacher = async (payload: TLoginTeacher) => {
   // CREATE TOKEN
   const accessToken = jwt.sign(
     {
-      email: isTeacherExist?.email,
-      role: isTeacherExist?.role,
-      teacherId: isTeacherExist?.id,
+      name: isUserExist?.name,
+      email: isUserExist?.email,
+      role: isUserExist?.role,
+      userId: isUserExist?.id,
     },
     config.jwt_access_secret as string,
     {
@@ -53,9 +51,9 @@ const loginTeacher = async (payload: TLoginTeacher) => {
   // CREATE REFRESH TOKEN
   const refreshToken = jwt.sign(
     {
-      email: isTeacherExist?.email,
-      role: isTeacherExist?.role,
-      teacherId: isTeacherExist?.id,
+      email: isUserExist?.email,
+      role: isUserExist?.role,
+      userId: isUserExist?.id,
     },
     config.jwt_refresh_secret as string,
     {
@@ -66,35 +64,35 @@ const loginTeacher = async (payload: TLoginTeacher) => {
   return {
     accessToken,
     refreshToken,
-    needsPassowrdChange: isTeacherExist?.needPassChange,
+    needsPassowrdChange: isUserExist?.needPassChange,
   };
 };
 
 const changePassword = async (
-  teacher: JwtPayload,
+  user: JwtPayload,
   payload: { oldPassword: string; newPassword: string }
 ) => {
-  const isTeacherExist = await Teacher.findOne({ email: teacher.email }).select(
+  const isUserExist = await User.findOne({ email: user.email }).select(
     "+password"
   );
 
-  console.log("IS TEACHER EXIST: ", isTeacherExist);
+  console.log("IS USER EXIST: ", isUserExist);
 
-  if (!isTeacherExist) {
-    throw new Error("Teacher not found");
+  if (!isUserExist) {
+    throw new Error("User not found");
   }
 
-  // CHECK IF THE TEACHER IS DELETED
-  const isDeleted = isTeacherExist?.isDeleted;
+  // CHECK IF THE USER IS DELETED
+  const isDeleted = isUserExist?.isDeleted;
 
   if (isDeleted) {
-    throw new Error("Teacher is deleted");
+    throw new Error("User has been deleted!");
   }
 
   // CHECK IF THE PASSWORD IS CORRECT
   const isPasswordCorrect = await bcrypt.compare(
     payload.oldPassword,
-    isTeacherExist?.password
+    isUserExist?.password
   );
 
   if (!isPasswordCorrect) {
@@ -107,8 +105,8 @@ const changePassword = async (
     Number(config.bcrypt_salt_rounds)
   );
 
-  await Teacher.findOneAndUpdate(
-    { id: teacher?.teacherId, role: teacher?.role },
+  await User.findOneAndUpdate(
+    { id: user?.userId, role: user?.role },
     {
       password: newHashedPassword,
       needPassChange: false,
@@ -135,28 +133,28 @@ const refreshToken = async (refreshToken: string) => {
 
     const role = decoded.role;
 
-    const isTeacherExist = await Teacher.findOne({
+    const isUserExist = await User.findOne({
       email: decoded.email,
     });
 
-    console.log("IS TEACHER EXIST: ", isTeacherExist);
+    console.log("IS USER EXIST: ", isUserExist);
 
-    if (!isTeacherExist) {
-      throw new Error("Teacher not found");
+    if (!isUserExist) {
+      throw new Error("User not found");
     }
 
-    // CHECK IF THE TEACHER IS DELETED
-    const isDeleted = isTeacherExist?.isDeleted;
+    // CHECK IF THE USER IS DELETED
+    const isDeleted = isUserExist?.isDeleted;
 
     if (isDeleted) {
-      throw new Error("Teacher is deleted");
+      throw new Error("User has been deleted!");
     }
 
     const accessToken = jwt.sign(
       {
-        email: isTeacherExist?.email,
-        role: isTeacherExist?.role,
-        teacherId: isTeacherExist?.id,
+        email: isUserExist?.email,
+        role: isUserExist?.role,
+        userId: isUserExist?.id,
       },
       config.jwt_refresh_secret as string,
       { expiresIn: "365d" }
@@ -171,7 +169,7 @@ const refreshToken = async (refreshToken: string) => {
 };
 
 export const AuthService = {
-  loginTeacher,
+  loginUser,
   refreshToken,
   changePassword,
 };

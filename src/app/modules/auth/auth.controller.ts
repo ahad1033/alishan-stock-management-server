@@ -2,9 +2,9 @@ import { Request, Response } from "express";
 
 import { AuthService } from "./auth.service";
 
-const loginTeacher = async (req: Request, res: Response) => {
+const loginUser = async (req: Request, res: Response) => {
   try {
-    const result = await AuthService.loginTeacher(req.body);
+    const result = await AuthService.loginUser(req.body);
 
     const { refreshToken, accessToken, needsPassowrdChange } = result;
 
@@ -36,12 +36,14 @@ const changePassword = async (req: Request, res: Response) => {
   try {
     const { ...passwordData } = req.body;
 
-    const student = await AuthService.changePassword(req.teacher, passwordData);
+    console.log("REQUEST FROM FRONTEND: ", req)
+
+    const user = await AuthService.changePassword(req, passwordData);
 
     res.status(200).json({
       success: true,
       message: "Password is updated successfully!",
-      data: student,
+      data: user,
     });
   } catch (error) {
     let errorMessage = "Something went wrong!";
@@ -81,7 +83,7 @@ const refreshToken = async (req: Request, res: Response) => {
 };
 
 export const AuthController = {
-  loginTeacher,
+  loginUser,
   refreshToken,
   changePassword,
 };

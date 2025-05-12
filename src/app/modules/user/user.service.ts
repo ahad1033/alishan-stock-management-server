@@ -27,6 +27,7 @@ const createUser = async (userData: IUser) => {
 
     // Create the user
     const user = new User(userWithHashedPassword);
+    
     return await user.save();
   } catch (error) {
     throw error;

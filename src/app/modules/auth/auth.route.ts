@@ -12,7 +12,7 @@ const router = express.Router();
 router.post(
   "/login",
   validateRequest(AuthValidation.loginTeacherSchema),
-  AuthController.loginTeacher
+  AuthController.loginUser
 );
 
 router.post(
