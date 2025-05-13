@@ -34,7 +34,7 @@ router.delete(
 
 // GET ALL PRODUCTS
 router.get(
-  "/get-all-products",
+  "/get-all-product",
   authMiddleware(USER_ROLE.super_admin, USER_ROLE.admin),
   ProductControllers.getProducts
 );

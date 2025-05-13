@@ -3,6 +3,6 @@ export interface IProduct {
   description?: String;
   sku: String;
   price: Number;
-  currentStock: Number;
+  stock: Number;
   isDeleted?: Boolean;
 }
