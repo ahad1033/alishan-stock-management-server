@@ -7,9 +7,9 @@ const customerSchema = new Schema(
     address: { type: String },
     phone: { type: String },
     email: { type: String },
-    totalPurchaseAmount: { type: Number },
-    totalPaidAmount: { type: Number },
-    totaldue: { type: Number },
+    totalPurchaseAmount: { type: Number, default: 0 },
+    totalPaidAmount: { type: Number, default: 0 },
+    totaldue: { type: Number, default: 0 },
     isDeleted: { type: Boolean, default: false },
   },
   {
