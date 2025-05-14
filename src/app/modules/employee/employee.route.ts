@@ -9,38 +9,38 @@ import { EmployeeControllers } from "./employee.controller";
 
 const router = express.Router();
 
-// CREATE A WORKER
+// CREATE A EMPLOYEE
 router.post(
-  "/create-worker",
+  "/create-employee",
   authMiddleware(USER_ROLE.super_admin, USER_ROLE.admin),
   validateRequest(EmployeeValidation.createEmployeeZodSchema),
   EmployeeControllers.createEmployee
 );
 
-// GET ALL WORKER
+// GET ALL EMPLOYEE
 router.get(
-  "/get-all-worker",
+  "/get-all-employee",
   authMiddleware(USER_ROLE.super_admin, USER_ROLE.admin, USER_ROLE.accountant),
   EmployeeControllers.getAllEmployee
 );
 
-// GET A WORKER BY ID
+// GET A EMPLOYEE BY ID
 router.get(
-  "/get-single-worker/:id",
+  "/get-single-employee/:id",
   authMiddleware(USER_ROLE.super_admin, USER_ROLE.admin, USER_ROLE.accountant),
   EmployeeControllers.getEmployeeById
 );
 
-// DELETE A WORKER BY ID
+// DELETE A EMPLOYEE BY ID
 router.delete(
-  "/delete-worker/:id",
+  "/delete-employee/:id",
   authMiddleware(USER_ROLE.super_admin, USER_ROLE.admin),
   EmployeeControllers.deleteEmployeeById
 );
 
-// UPDATE A WORKER BY ID
+// UPDATE A EMPLOYEE BY ID
 router.patch(
-  "/update-worker/:id",
+  "/update-employee/:id",
   authMiddleware(USER_ROLE.super_admin, USER_ROLE.admin),
   validateRequest(EmployeeValidation.editEmployeeZodSchema),
   EmployeeControllers.updateEmployeeById

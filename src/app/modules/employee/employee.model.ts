@@ -24,6 +24,7 @@ const employeeSchema = new Schema(
     monthlySalary: { type: Number, required: true },
     nidNumber: { type: String, required: true },
     joiningDate: { type: String, required: true },
+    dateOfBirth: { type: String, required: true },
     isDeleted: { type: Boolean, default: false },
   },
   {

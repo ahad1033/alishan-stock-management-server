@@ -19,6 +19,7 @@ export interface IEmployee {
   monthlySalary: number;
   nidNumber: string;
   joiningDate: string;
+  dateOfBirht: string;
   isDeleted?: boolean;
 }
 

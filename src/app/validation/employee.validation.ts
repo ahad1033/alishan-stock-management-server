@@ -42,6 +42,9 @@ const createEmployeeZodSchema = z.object({
     joiningDate: z
       .string({ required_error: "Joining date is required" })
       .trim(),
+    dateOfBirth: z
+      .string({ required_error: "Date of birth is required" })
+      .trim(),
     isDeleted: z.boolean().optional(),
   }),
 });
@@ -76,6 +79,7 @@ export const editEmployeeZodSchema = z.object({
       .optional(),
     nidNumber: z.string().trim().optional(),
     joiningDate: z.string().trim().optional(),
+    dateOfBirth: z.string().trim().optional(),
     isDeleted: z.boolean().optional(),
   }),
 });
