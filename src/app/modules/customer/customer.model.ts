@@ -9,7 +9,7 @@ const customerSchema = new Schema(
     email: { type: String },
     totalPurchaseAmount: { type: Number, default: 0 },
     totalPaidAmount: { type: Number, default: 0 },
-    totaldue: { type: Number, default: 0 },
+    totalDue: { type: Number, default: 0 },
     isDeleted: { type: Boolean, default: false },
   },
   {
