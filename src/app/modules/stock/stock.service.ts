@@ -21,7 +21,7 @@ const addStock = async (
   await Stock.create({
     productId: new Types.ObjectId(productId),
     quantity,
-    status: "IN",
+    status: "in",
     issuedBy: new Types.ObjectId(issuedBy),
   } as IStock);
 
@@ -76,7 +76,7 @@ const deductStockByInvoice = async (
     }
 
     invoice.isStockDeducted = true;
-    
+
     await invoice.save({ session });
 
     await session.commitTransaction();

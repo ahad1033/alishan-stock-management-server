@@ -2,10 +2,10 @@ import { model, Schema } from "mongoose";
 
 const stockSchema = new Schema(
   {
-    productId: { type: Schema.Types.ObjectId, ref: "Product", required: true },
+    productId: { type: Schema.Types.ObjectId, ref: "Product" },
     quantity: { type: Number, required: true },
-    type: { type: String, enum: ["in", "out"], required: true },
-    issuedBy: { type: Schema.Types.ObjectId, ref: "User", required: true },
+    status: { type: String, enum: ["in", "out"] },
+    issuedBy: { type: Schema.Types.ObjectId, ref: "User" },
     relatedInvoiceId: { type: Schema.Types.ObjectId, ref: "Invoice" },
   },
   {

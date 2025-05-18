@@ -1,18 +1,18 @@
 import { z } from "zod";
 
-import { Types } from "mongoose";
+import mongoose from "mongoose";
 
-// Helper to validate ObjectId strings
-const objectIdValidator = z
-  .string({ required_error: "ID is required" })
-  .refine((val) => Types.ObjectId.isValid(val), {
-    message: "Invalid ObjectId format",
+// Helper to check if a value is a valid ObjectId
+const objectId = z
+  .string()
+  .refine((val) => mongoose.Types.ObjectId.isValid(val), {
+    message: "Invalid ObjectId",
   });
 
 // Schema for adding stock (status will be "IN" by default in service)
 const addStockZodSchema = z.object({
   body: z.object({
-    productId: objectIdValidator,
+    productId: objectId,
     quantity: z
       .number({ required_error: "Quantity is required" })
       .int("Quantity must be an integer")
