@@ -4,5 +4,6 @@ export interface IProduct {
   sku: String;
   price: Number;
   stock: Number;
+  reserved?: Number;
   isDeleted?: Boolean;
 }

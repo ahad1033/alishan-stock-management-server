@@ -23,8 +23,9 @@ const invoiceProductSchema = z.object({
 
 const createInvoiceZodSchema = z.object({
   body: z.object({
+    invoiceNumber: z.string().optional(),
     customerId: objectId,
-    issuesBy: objectId,
+    issuedBy: objectId,
     products: z
       .array(invoiceProductSchema, {
         required_error: "At least one product is required",
@@ -39,14 +40,16 @@ const createInvoiceZodSchema = z.object({
     dueAmount: z
       .number({ required_error: "Due amount is required" })
       .min(0, "Due amount cannot be negative"),
+    isStockDeducted: z.boolean().optional(),
     isDeleted: z.boolean().optional(),
   }),
 });
 
 const editInvoiceZodSchema = z.object({
   body: z.object({
+    invoiceNumber: z.string().optional(),
     customerId: objectId.optional(),
-    issuesBy: objectId.optional(),
+    issuedBy: objectId.optional(),
     products: z.array(invoiceProductSchema).optional(),
     totalAmount: z
       .number()
@@ -54,6 +57,7 @@ const editInvoiceZodSchema = z.object({
       .optional(),
     paidAmount: z.number().min(0, "Paid amount cannot be negative").optional(),
     dueAmount: z.number().min(0, "Due amount cannot be negative").optional(),
+    isStockDeducted: z.boolean().optional(),
     isDeleted: z.boolean().optional(),
   }),
 });

@@ -1,7 +1,9 @@
 import mongoose from "mongoose";
 
-import { Invoice } from "./invoice.model";
 import { IInvoice } from "./invoice.interface";
+
+import { Invoice } from "./invoice.model";
+import { Product } from "../product/product.model";
 import { Customer } from "../customer/customer.model";
 
 const createInvoice = async (invoiceData: IInvoice) => {
@@ -37,6 +39,15 @@ const createInvoice = async (invoiceData: IInvoice) => {
       { session }
     );
 
+    // Step 4: Update product reserved quantities
+    for (const item of invoiceData.products) {
+      await Product.findByIdAndUpdate(
+        item.productId,
+        { $inc: { reserved: item.quantity } },
+        { session }
+      );
+    }
+
     await session.commitTransaction();
     session.endSession();
 
@@ -53,6 +64,9 @@ const createInvoice = async (invoiceData: IInvoice) => {
 };
 
 const editInvoice = async (id: string, invoiceData: Partial<IInvoice>) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     const existingInvoice = await Invoice.findById(id);
 
@@ -60,31 +74,64 @@ const editInvoice = async (id: string, invoiceData: Partial<IInvoice>) => {
       throw new Error("Invoice not found");
     }
 
+    // Step 1: Revert old reserved quantities
+    for (const item of existingInvoice.products) {
+      await Product.findByIdAndUpdate(
+        item.productId,
+        { $inc: { reserved: -item.quantity } },
+        { session }
+      );
+    }
+
     // Revert old values from customer totals
-    await Customer.findByIdAndUpdate(existingInvoice.customerId, {
-      $inc: {
-        totalPurchaseAmount: -existingInvoice.totalAmount,
-        totalPaidAmount: -existingInvoice.paidAmount,
-        totalDue: -existingInvoice.dueAmount,
+    await Customer.findByIdAndUpdate(
+      existingInvoice.customerId,
+      {
+        $inc: {
+          totalPurchaseAmount: -existingInvoice.totalAmount,
+          totalPaidAmount: -existingInvoice.paidAmount,
+          totalDue: -existingInvoice.dueAmount,
+        },
       },
-    });
+      { session }
+    );
 
-    // Update invoice data
+    // Step 3: Update invoice
     Object.assign(existingInvoice, invoiceData);
-    const updatedInvoice = await existingInvoice.save();
+    const updatedInvoice = await existingInvoice.save({ session });
 
-    // Add new values to customer totals
-    await Customer.findByIdAndUpdate(updatedInvoice.customerId, {
-      $inc: {
-        totalPurchaseAmount: updatedInvoice.totalAmount,
-        totalPaidAmount: updatedInvoice.paidAmount,
-        totalDue: updatedInvoice.dueAmount,
+    // Step 4: Apply new reserved quantities
+    for (const item of updatedInvoice.products) {
+      await Product.findByIdAndUpdate(
+        item.productId,
+        { $inc: { reserved: item.quantity } },
+        { session }
+      );
+    }
+
+    // Step 5: Update customer totals
+    await Customer.findByIdAndUpdate(
+      updatedInvoice.customerId,
+      {
+        $inc: {
+          totalPurchaseAmount: updatedInvoice.totalAmount,
+          totalPaidAmount: updatedInvoice.paidAmount,
+          totalDue: updatedInvoice.dueAmount,
+        },
       },
-    });
+      { session }
+    );
+
+    await session.commitTransaction();
+    session.endSession();
 
     return updatedInvoice;
   } catch (error: unknown) {
     if (error instanceof Error) {
+      await session.abortTransaction();
+
+      session.endSession();
+
       throw new Error("Failed to edit invoice: " + error.message);
     } else {
       throw new Error("Failed to edit invoice: Unknown error");
@@ -98,6 +145,13 @@ const deleteInvoice = async (id: string) => {
 
     if (!invoice) {
       throw new Error("Invoice not found");
+    }
+
+    // Step 1: Revert product reserved quantities
+    for (const item of invoice.products) {
+      await Product.findByIdAndUpdate(item.productId, {
+        $inc: { reserved: -item.quantity },
+      });
     }
 
     // Revert the customer's totals based on this invoice
@@ -128,6 +182,7 @@ const getInvoice = async (queryParams: {
 }) => {
   try {
     const { search, fromDate, toDate } = queryParams;
+
     const query: any = { isDeleted: false };
 
     // Handle date range filter
@@ -195,8 +250,8 @@ const getInvoiceById = async (id: string) => {
 };
 
 export const InvoiceServices = {
-  editInvoice,
   getInvoice,
+  editInvoice,
   deleteInvoice,
   createInvoice,
   getInvoiceById,

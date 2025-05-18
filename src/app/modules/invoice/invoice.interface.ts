@@ -19,5 +19,6 @@ export interface IInvoice {
   paidAmount: number;
   dueAmount: number;
   invoiceNumber?: string;
+  isStockDeducted?: Boolean,
   isDeleted?: Boolean;
 }

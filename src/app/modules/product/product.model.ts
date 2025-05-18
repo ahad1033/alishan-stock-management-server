@@ -3,9 +3,10 @@ import { model, Schema } from "mongoose";
 const productSchema = new Schema(
   {
     name: { type: String, required: true },
-    description: { type: String},
+    description: { type: String },
     sku: { type: String, unique: true },
     stock: { type: Number, required: true },
+    reserved: { type: Number, default: 0 },
     price: { type: Number, required: true },
     isDeleted: { type: Boolean, default: false },
   },

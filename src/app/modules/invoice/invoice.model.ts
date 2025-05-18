@@ -24,6 +24,7 @@ const invoiceSchema = new Schema(
     paidAmount: { type: Number, required: true },
     dueAmount: { type: Number, required: true },
     invoiceNumber: { type: String, unique: true },
+    isStockDeducted: { type: Boolean, default: false},
     isDeleted: { type: Boolean, default: false },
   },
   {

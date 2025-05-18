@@ -13,6 +13,11 @@ const createProductZodSchema = z.object({
       .number({ required_error: "Stock is required" })
       .int("Stock must be an integer")
       .min(0, "Stock must be 0 or greater"),
+    reserved: z
+      .number()
+      .int("Reserved must be an integer")
+      .min(0, "Reserved must be 0 or greater")
+      .optional(),
     isDeleted: z.boolean().optional(),
   }),
 });
@@ -31,6 +36,11 @@ const editProductZodSchema = z.object({
       .number()
       .int("Current stock must be an integer")
       .positive("Current stock number must be positive")
+      .optional(),
+    reserved: z
+      .number()
+      .int("Reserved must be an integer")
+      .min(0, "Reserved must be 0 or greater")
       .optional(),
     isDeleted: z.boolean().optional(),
   }),
