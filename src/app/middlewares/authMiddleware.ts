@@ -10,10 +10,6 @@ export const authMiddleware = (...requiredRoles: TUserRole[]) => {
   return async (req: Request, _res: Response, next: NextFunction) => {
     const token = req.headers.authorization;
 
-    // console.log("token: ", token);
-    // console.log("headers: ", req.headers);
-    // console.log("body: ", req.body);
-
     // CHECK IF THE TOKEN IS PRESENT
     if (!token) {
       throw new Error("You are not authorized to access this resource!");
@@ -28,8 +24,6 @@ export const authMiddleware = (...requiredRoles: TUserRole[]) => {
       const isUserExist = await User.findOne({
         email: decoded.email,
       });
-
-      console.log("IS USER EXIST: ", isUserExist);
 
       if (!isUserExist) {
         throw new Error("User not found");
@@ -46,7 +40,7 @@ export const authMiddleware = (...requiredRoles: TUserRole[]) => {
         throw new Error("You are not authorized to access this resource!");
       }
 
-      req.teacher = decoded;
+      req.user = decoded;
       next();
     } catch (err) {
       throw new Error("You are not authorized to access this resource!");
