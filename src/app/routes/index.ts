@@ -5,12 +5,17 @@ import { UserRoutes } from "../modules/user/user.route";
 import { StockRoutes } from "../modules/stock/stock.route";
 import { InvoiceRoutes } from "../modules/invoice/invoice.route";
 import { ProductRoutes } from "../modules/product/product.route";
+import { ExpenseRoutes } from "../modules/expense/expense.route";
 import { CustomerRoutes } from "../modules/customer/customer.route";
 import { EmployeeRoutes } from "../modules/employee/employee.route";
 
 const router = Router();
 
 const moduleRoutes = [
+  {
+    path: "/expenses",
+    route: ExpenseRoutes,
+  },
   {
     path: "/stocks",
     route: StockRoutes,
