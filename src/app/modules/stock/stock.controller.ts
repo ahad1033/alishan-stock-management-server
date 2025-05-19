@@ -27,7 +27,7 @@ const deductStockByInvoice = async (req: Request, res: Response) => {
   try {
     const { invoiceNumber } = req.body;
 
-    const issuedBy = req.user._id;
+    const issuedBy = req.user.userId;
 
     const result = await StockServices.deductStockByInvoice(
       invoiceNumber,

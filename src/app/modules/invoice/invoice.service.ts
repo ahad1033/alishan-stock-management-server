@@ -5,6 +5,7 @@ import { IInvoice } from "./invoice.interface";
 import { Invoice } from "./invoice.model";
 import { Product } from "../product/product.model";
 import { Customer } from "../customer/customer.model";
+import { parseDate } from "../../utils/parseDate";
 
 const createInvoice = async (invoiceData: IInvoice) => {
   const session = await mongoose.startSession();
@@ -179,38 +180,77 @@ const getInvoice = async (queryParams: {
   search?: string;
   fromDate?: string;
   toDate?: string;
+  invoiceNumber?: string;
 }) => {
   try {
-    const { search, fromDate, toDate } = queryParams;
+    const { search, fromDate, toDate, invoiceNumber } = queryParams;
 
-    const query: any = { isDeleted: false };
+    // If invoiceNumber is provided, handle exact match and return single invoice
+    if (invoiceNumber) {
+      const trimmedInvoice = invoiceNumber.trim();
 
-    // Handle date range filter
-    if (fromDate || toDate) {
-      query.createdAt = {};
-      if (fromDate) query.createdAt.$gte = new Date(fromDate);
-      if (toDate) query.createdAt.$lte = new Date(toDate);
+      // Optional: Add a regex check if you want to ensure it's only digits
+      if (!/^\d+$/.test(trimmedInvoice)) {
+        throw new Error("Invalid invoice number format");
+      }
+
+      const invoice = await Invoice.findOne({
+        isDeleted: false,
+        invoiceNumber: trimmedInvoice,
+      })
+        .populate("customerId", "name")
+        .populate("issuedBy", "name")
+        .lean();
+
+      console.log("invoice from db: ", invoice);
+
+      if (!invoice) return [];
+
+      const customer = invoice.customerId as { name?: string };
+      const user = invoice.issuedBy as { name?: string };
+
+      return [
+        {
+          ...invoice,
+          customerName: customer?.name || "Unknown",
+          issuedBy: user?.name || "Unknown",
+        },
+      ];
     }
 
-    // Fetch invoices with customer and user name populated
+    // General query (search, date filter, etc.)
+    const query: any = { isDeleted: false };
+
+    if (fromDate || toDate) {
+      query.createdAt = {};
+
+      const parsedFrom = fromDate ? parseDate(fromDate) : null;
+      const parsedTo = toDate ? parseDate(toDate) : null;
+
+      if (parsedFrom) query.createdAt.$gte = parsedFrom;
+      if (parsedTo) query.createdAt.$lte = parsedTo;
+    }
+
     let invoices = await Invoice.find(query)
       .populate("customerId", "name")
       .populate("issuedBy", "name")
-      .lean();
+      .lean()
+      .sort({ createdAt: -1 });
 
-    // Optional search filtering (by invoice number or customer name)
+    // Apply search only if invoiceNumber is not provided
     if (search) {
       const lowerSearch = search.toLowerCase();
       invoices = invoices.filter((inv) => {
         const customer = inv.customerId as { name?: string };
+        const invoiceNumStr = String(inv.invoiceNumber);
+
         return (
-          inv.invoiceNumber?.toLowerCase().includes(lowerSearch) ||
+          invoiceNumStr.includes(lowerSearch) ||
           customer?.name?.toLowerCase().includes(lowerSearch)
         );
       });
     }
 
-    // Transform result: expose names as `customerName` and `issuedBy`
     const transformedInvoices = invoices.map((inv) => {
       const customer = inv.customerId as { name?: string };
       const user = inv.issuedBy as { name?: string };

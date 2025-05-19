@@ -80,12 +80,13 @@ const deleteInvoice = async (req: Request, res: Response) => {
 
 const getInvoice = async (req: Request, res: Response) => {
   try {
-    const { search, fromDate, toDate } = req.query;
+    const { search, fromDate, toDate, invoiceNumber } = req.query;
 
     const invoices = await InvoiceServices.getInvoice({
       search: search as string,
       fromDate: fromDate as string,
       toDate: toDate as string,
+      invoiceNumber: invoiceNumber as string,
     });
 
     res.status(200).json({
