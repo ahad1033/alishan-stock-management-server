@@ -2,8 +2,12 @@ import mongoose from "mongoose";
 
 import { Expense } from "./expense.model";
 import { IExpense } from "./expense.interface";
+import { Balance } from "../balance/balance.model";
 
 const addExpense = async (expenseData: IExpense, issuedBy: string) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
     expenseData.issuedBy = new mongoose.Types.ObjectId(issuedBy);
 
@@ -17,11 +21,38 @@ const addExpense = async (expenseData: IExpense, issuedBy: string) => {
       expenseData.employeeId = undefined;
     }
 
-    // Create and save the expense
+    // 1. Save the expense
     const expense = new Expense(expenseData);
+    const savedExpense = await expense.save({ session });
 
-    return await expense.save();
+    // 2. Update balance
+    const balance = await Balance.findOne().session(session);
+
+    if (!balance) {
+      throw new Error(
+        "Balance record not found. Please create an invoice first."
+      );
+    }
+
+    const amount = Number(expenseData.amount);
+    balance.totalExpense += amount;
+    balance.currentBalance -= amount;
+
+    if (balance.currentBalance < 0) {
+      throw new Error("Not enough balance to cover this expense.");
+    }
+
+    await balance.save({ session });
+
+    // 3. Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    return savedExpense;
   } catch (error: unknown) {
+    await session.abortTransaction();
+    session.endSession();
+
     if (error instanceof Error) {
       throw new Error("Failed to create expense: " + error.message);
     } else if (error instanceof mongoose.Error.ValidationError) {
@@ -33,16 +64,20 @@ const addExpense = async (expenseData: IExpense, issuedBy: string) => {
 };
 
 const editExpense = async (id: string, expenseData: Partial<IExpense>) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const expense = await Expense.findById(id);
+    const expense = await Expense.findById(id).session(session);
 
     if (!expense) {
       throw new Error("Expense not found");
     }
 
-    // ✅ Ensure employeeId stays intact if category is "salary"
+    const oldAmount = expense.amount;
+
+    // ✅ Ensure salary category includes employeeId
     if (expense.category === "salary") {
-      // If someone tries to remove employeeId, block it
       if (
         expenseData.employeeId === undefined ||
         expenseData.employeeId === null
@@ -50,11 +85,10 @@ const editExpense = async (id: string, expenseData: Partial<IExpense>) => {
         throw new Error("Employee ID is required for salary expenses");
       }
     } else {
-      // If not salary, employeeId shuld not be saved
       expense.employeeId = undefined;
     }
 
-    // ✅ Update allowed fields only
+    // ✅ Update allowed fields
     const allowedFields: (keyof IExpense)[] = ["date", "description", "amount"];
     allowedFields.forEach((field) => {
       if (expenseData[field] !== undefined) {
@@ -62,8 +96,35 @@ const editExpense = async (id: string, expenseData: Partial<IExpense>) => {
       }
     });
 
-    return await expense.save();
+    // ✅ Save updated expense
+    const updatedExpense = await expense.save({ session });
+
+    // ✅ Update Balance
+    const balance = await Balance.findOne().session(session);
+    if (!balance) {
+      throw new Error("Balance record not found.");
+    }
+
+    const newAmount = updatedExpense.amount;
+    const diff = newAmount - oldAmount;
+
+    balance.totalExpense += diff;
+    balance.currentBalance -= diff;
+
+    if (balance.currentBalance < 0) {
+      throw new Error("Not enough balance for updated expense.");
+    }
+
+    await balance.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return updatedExpense;
   } catch (error: unknown) {
+    await session.abortTransaction();
+    session.endSession();
+
     if (error instanceof Error) {
       throw new Error("Failed to edit expense: " + error.message);
     } else if (error instanceof mongoose.Error.ValidationError) {
@@ -75,18 +136,42 @@ const editExpense = async (id: string, expenseData: Partial<IExpense>) => {
 };
 
 const deleteExpense = async (id: string) => {
-  try {
-    const expense = await Expense.findById(id);
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
+  try {
+    const expense = await Expense.findById(id).session(session);
     if (!expense) {
       throw new Error("Expense not found");
     }
 
-    // Soft delete by setting isDelete to true
-    expense.isDeleted = true;
+    if (expense.isDeleted) {
+      throw new Error("Expense already deleted");
+    }
 
-    return await expense.save();
+    // Mark as soft deleted
+    expense.isDeleted = true;
+    await expense.save({ session });
+
+    // Update Balance
+    const balance = await Balance.findOne().session(session);
+    if (!balance) {
+      throw new Error("Balance record not found");
+    }
+
+    balance.totalExpense -= expense.amount;
+    balance.currentBalance += expense.amount;
+
+    await balance.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return expense;
   } catch (error: unknown) {
+    await session.abortTransaction();
+    session.endSession();
+
     if (error instanceof Error) {
       throw new Error("Failed to delete expense: " + error.message);
     } else {
