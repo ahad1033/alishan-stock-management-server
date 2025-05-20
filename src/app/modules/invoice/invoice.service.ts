@@ -2,10 +2,13 @@ import mongoose from "mongoose";
 
 import { IInvoice } from "./invoice.interface";
 
+import { parseDate } from "../../utils/parseDate";
+
 import { Invoice } from "./invoice.model";
+import { Balance } from "../balance/balance.model";
 import { Product } from "../product/product.model";
 import { Customer } from "../customer/customer.model";
-import { parseDate } from "../../utils/parseDate";
+import { createOrUpdateBalance } from "../balance/balance.service";
 
 const createInvoice = async (invoiceData: IInvoice) => {
   const session = await mongoose.startSession();
@@ -49,6 +52,10 @@ const createInvoice = async (invoiceData: IInvoice) => {
       );
     }
 
+    // Step 5: Create or update balance
+    await createOrUpdateBalance(paidAmount, dueAmount, session);
+
+    // Commit transaction
     await session.commitTransaction();
     session.endSession();
 
@@ -97,6 +104,14 @@ const editInvoice = async (id: string, invoiceData: Partial<IInvoice>) => {
       { session }
     );
 
+    // Revert from balance
+    const balance = await Balance.findOne().session(session);
+    if (!balance) throw new Error("Balance record not found");
+
+    balance.totalPaid -= existingInvoice.paidAmount;
+    balance.totalUnPaid -= existingInvoice.dueAmount;
+    balance.currentBalance -= existingInvoice.paidAmount;
+
     // Step 3: Update invoice
     Object.assign(existingInvoice, invoiceData);
     const updatedInvoice = await existingInvoice.save({ session });
@@ -123,6 +138,13 @@ const editInvoice = async (id: string, invoiceData: Partial<IInvoice>) => {
       { session }
     );
 
+    // Step 6: Apply updated values
+    balance.totalPaid += updatedInvoice.paidAmount;
+    balance.totalUnPaid += updatedInvoice.dueAmount;
+    balance.currentBalance += updatedInvoice.paidAmount;
+
+    await balance.save({ session });
+
     await session.commitTransaction();
     session.endSession();
 
@@ -141,8 +163,11 @@ const editInvoice = async (id: string, invoiceData: Partial<IInvoice>) => {
 };
 
 const deleteInvoice = async (id: string) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const invoice = await Invoice.findById(id);
+    const invoice = await Invoice.findById(id).session(session);
 
     if (!invoice) {
       throw new Error("Invoice not found");
@@ -150,23 +175,46 @@ const deleteInvoice = async (id: string) => {
 
     // Step 1: Revert product reserved quantities
     for (const item of invoice.products) {
-      await Product.findByIdAndUpdate(item.productId, {
-        $inc: { reserved: -item.quantity },
-      });
+      await Product.findByIdAndUpdate(
+        item.productId,
+        {
+          $inc: { reserved: -item.quantity },
+        },
+        { session }
+      );
     }
 
     // Revert the customer's totals based on this invoice
-    await Customer.findByIdAndUpdate(invoice.customerId, {
-      $inc: {
-        totalPurchaseAmount: -invoice.totalAmount,
-        totalPaidAmount: -invoice.paidAmount,
-        totalDue: -invoice.dueAmount,
+    await Customer.findByIdAndUpdate(
+      invoice.customerId,
+      {
+        $inc: {
+          totalPurchaseAmount: -invoice.totalAmount,
+          totalPaidAmount: -invoice.paidAmount,
+          totalDue: -invoice.dueAmount,
+        },
       },
-    });
+      { session }
+    );
+
+    //  Revert balance changes
+    const balance = await Balance.findOne().session(session);
+    if (!balance) throw new Error("Balance record not found");
+
+    balance.totalPaid -= invoice.paidAmount;
+    balance.totalUnPaid -= invoice.dueAmount;
+    balance.currentBalance -= invoice.paidAmount;
+
+    await balance.save({ session });
 
     // Soft delete the invoice
     invoice.isDeleted = true;
-    return await invoice.save();
+    const deletedInvoice = await invoice.save({ session });
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return deletedInvoice;
   } catch (error: unknown) {
     if (error instanceof Error) {
       throw new Error("Failed to delete invoice: " + error.message);
