@@ -25,7 +25,7 @@ const createExpenseZodSchema = z.object({
       required_error: "Category is required",
     }),
     employeeId: objectId.optional(),
-    issuedBy: objectId,
+    issuedBy: objectId.optional(),
     description: z.string().optional(),
     amount: z
       .number({ required_error: "Amount is required" })

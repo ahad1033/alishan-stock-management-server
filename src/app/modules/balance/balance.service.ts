@@ -32,6 +32,21 @@ export const createOrUpdateBalance = async (
   return balance;
 };
 
-// export const BalanceServices = {
-//   createOrUpdateBalance,
-// };
+const getBalance = async () => {
+  try {
+    const expenses = await Balance.find();
+
+    console.log(expenses);
+
+    return expenses;
+  } catch (error: unknown) {
+    throw new Error(
+      "Failed to retrieve balance: " +
+        (error instanceof Error ? error.message : "Unknown error")
+    );
+  }
+};
+
+export const BalanceServices = {
+  getBalance,
+};
