@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 import { Expense } from "./expense.model";
 import { IExpense } from "./expense.interface";
 import { Balance } from "../balance/balance.model";
+import { Employee } from "../employee/employee.model";
 
 const addExpense = async (expenseData: IExpense, issuedBy: string) => {
   const session = await mongoose.startSession();
@@ -16,8 +17,55 @@ const addExpense = async (expenseData: IExpense, issuedBy: string) => {
       if (!expenseData.employeeId) {
         throw new Error("Employee ID is required for salary expenses");
       }
+
+      // 1. Fetch employee
+      const employee = await Employee.findById(expenseData.employeeId).session(
+        session
+      );
+      if (!employee) {
+        throw new Error("Employee not found.");
+      }
+
+      // 2. Validate amount
+      const enteredAmount = Number(expenseData.amount);
+      const expectedSalary = Number(employee.monthlySalary);
+
+      if (enteredAmount !== expectedSalary) {
+        throw new Error(
+          `Invalid salary amount. Expected salary is ${expectedSalary}, but received ${enteredAmount}.`
+        );
+      }
+
+      // 3. Prevent duplicate salary for current month
+      const currentDate = new Date();
+      const year = currentDate.getUTCFullYear();
+      const month = currentDate.getUTCMonth();
+      const startOfMonth = new Date(Date.UTC(year, month, 1));
+      const startOfNextMonth = new Date(Date.UTC(year, month + 1, 1));
+
+      // Find existing salary for the same employee in the current month
+      const existingSalary = await Expense.findOne({
+        employeeId: expenseData.employeeId,
+        category: "salary",
+        isDeleted: false,
+        createdAt: {
+          $gte: startOfMonth,
+          $lt: startOfNextMonth,
+        },
+      }).session(session);
+
+      if (existingSalary) {
+        throw new Error(
+          `Salary has already been issued to this employee for ${currentDate.toLocaleString(
+            "default",
+            {
+              month: "long",
+              year: "numeric",
+            }
+          )}.`
+        );
+      }
     } else {
-      // If not salary, clear employeeId (optional logic)
       expenseData.employeeId = undefined;
     }
 
@@ -54,7 +102,7 @@ const addExpense = async (expenseData: IExpense, issuedBy: string) => {
     session.endSession();
 
     if (error instanceof Error) {
-      throw new Error("Failed to create expense: " + error.message);
+      throw new Error(error.message);
     } else if (error instanceof mongoose.Error.ValidationError) {
       throw new Error("Validation error: " + error.message);
     } else {

@@ -1,5 +1,6 @@
 import { Employee } from "./employee.model";
 import { IEmployee } from "./employee.interface";
+import mongoose from "mongoose";
 
 const createEmployee = async (employeeData: IEmployee) => {
   try {
@@ -27,11 +28,70 @@ const getAllEmployee = async () => {
 
 const getEmployeeById = async (employeeId: string) => {
   try {
-    // Find employee by ID and check if not deleted
-    const employee = await Employee.findOne({
-      _id: employeeId,
-      isDeleted: false,
-    });
+    // Validate ID
+    if (!mongoose.Types.ObjectId.isValid(employeeId)) {
+      throw new Error("Invalid employee ID");
+    }
+
+    const result = await Employee.aggregate([
+      {
+        $match: {
+          _id: new mongoose.Types.ObjectId(employeeId),
+          isDeleted: false,
+        },
+      },
+      {
+        $lookup: {
+          from: "expenses",
+          let: { empId: "$_id" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$employeeId", "$$empId"] },
+                    { $eq: ["$category", "salary"] },
+                    { $eq: ["$isDeleted", false] },
+                  ],
+                },
+              },
+            },
+            {
+              $sort: { date: -1 },
+            },
+            {
+              $lookup: {
+                from: "users", // MongoDB collection name (usually lowercase plural)
+                localField: "issuedBy",
+                foreignField: "_id",
+                as: "issuedByUser",
+              },
+            },
+            {
+              $unwind: {
+                path: "$issuedByUser",
+                preserveNullAndEmptyArrays: true,
+              },
+            },
+            {
+              $project: {
+                _id: 0,
+                amount: 1,
+                date: 1,
+                description: 1,
+                issuedBy: {
+                  _id: "$issuedByUser._id",
+                  name: "$issuedByUser.name", // assuming User model has `name`
+                },
+              },
+            },
+          ],
+          as: "salaryHistory",
+        },
+      },
+    ]);
+
+    const employee = result[0];
 
     if (!employee) {
       throw new Error("Employee not found");
