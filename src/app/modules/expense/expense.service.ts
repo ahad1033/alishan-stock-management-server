@@ -237,6 +237,7 @@ const getExpense = async (classParam?: string) => {
     }
 
     const expenses = await Expense.find(query)
+      .sort({ createdAt: -1 })
       .populate("employeeId", "name")
       .populate("issuedBy", "name")
       .lean();

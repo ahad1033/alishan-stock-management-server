@@ -27,9 +27,16 @@ const createInvoice = async (invoiceData: IInvoice) => {
 
     // Step 2: Create and save invoice
     const invoice = new Invoice(invoiceData);
-    const savedInvoice = await invoice.save({ session });
+    await invoice.save({ session });
 
-    // Step 3: Update customer's financials
+    // Step 3: Populate customer data
+    const populatedInvoice = await Invoice.findById(invoice._id)
+      .populate("customerId")
+      .populate("products.productId", "name price stock reserved")
+      .session(session)
+      .lean();
+
+    // Step 4: Update customer's financials
     const { customerId, totalAmount, paidAmount, dueAmount } = invoiceData;
     await Customer.findByIdAndUpdate(
       customerId,
@@ -59,10 +66,10 @@ const createInvoice = async (invoiceData: IInvoice) => {
     await session.commitTransaction();
     session.endSession();
 
-    return savedInvoice;
+    return populatedInvoice;
   } catch (error: unknown) {
     if (error instanceof Error) {
-      throw new Error("Failed to create invoice: " + error.message);
+      throw new Error(error.message);
     } else if (error instanceof mongoose.Error.ValidationError) {
       throw new Error("Validation error: " + error.message);
     } else {
@@ -321,7 +328,9 @@ const getInvoice = async (queryParams: {
 
 const getInvoiceById = async (id: string) => {
   try {
-    const invoice = await Invoice.findById(id);
+    const invoice = await Invoice.findById(id)
+      .populate("customerId")
+      .populate("products.productId");
 
     if (!invoice || invoice.isDeleted) {
       throw new Error("Invoice not found");

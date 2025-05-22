@@ -6,7 +6,7 @@ const loginUser = async (req: Request, res: Response) => {
   try {
     const result = await AuthService.loginUser(req.body);
 
-    const { refreshToken, accessToken, needsPassowrdChange } = result;
+    const { refreshToken, accessToken, needsPassowrdChange, userRole } = result;
 
     res.cookie("refreshToken", refreshToken, {
       httpOnly: true,
@@ -17,7 +17,7 @@ const loginUser = async (req: Request, res: Response) => {
     res.status(200).json({
       success: true,
       message: "Logged in successfully!",
-      data: { accessToken, needsPassowrdChange },
+      data: { accessToken, needsPassowrdChange, userRole },
     });
   } catch (error) {
     let errorMessage = "Something went wrong!";
@@ -36,7 +36,7 @@ const changePassword = async (req: Request, res: Response) => {
   try {
     const { ...passwordData } = req.body;
 
-    console.log("REQUEST FROM FRONTEND: ", req)
+    console.log("REQUEST FROM FRONTEND: ", req);
 
     const user = await AuthService.changePassword(req, passwordData);
 

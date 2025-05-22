@@ -36,8 +36,6 @@ const getBalance = async () => {
   try {
     const expenses = await Balance.find();
 
-    console.log(expenses);
-
     return expenses;
   } catch (error: unknown) {
     throw new Error(

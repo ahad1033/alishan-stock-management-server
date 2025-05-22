@@ -35,14 +35,24 @@ router.delete(
 // GET ALL PRODUCTS
 router.get(
   "/get-all-product",
-  authMiddleware(USER_ROLE.super_admin, USER_ROLE.admin),
+  authMiddleware(
+    USER_ROLE.super_admin,
+    USER_ROLE.admin,
+    USER_ROLE.accountant,
+    USER_ROLE.stock_manager
+  ),
   ProductControllers.getProducts
 );
 
 // GET A PRODUCTS BY ID
 router.get(
   "/get-single-product/:id",
-  authMiddleware(USER_ROLE.super_admin, USER_ROLE.admin),
+  authMiddleware(
+    USER_ROLE.super_admin,
+    USER_ROLE.admin,
+    USER_ROLE.accountant,
+    USER_ROLE.stock_manager
+  ),
   ProductControllers.getProductById
 );
 

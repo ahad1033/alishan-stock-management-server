@@ -11,8 +11,6 @@ const loginUser = async (payload: TLoginUser) => {
     "+password"
   );
 
-  console.log("IS USER EXIST: ", isUserExist);
-
   if (!isUserExist) {
     throw new Error("User not found");
   }
@@ -65,6 +63,7 @@ const loginUser = async (payload: TLoginUser) => {
     accessToken,
     refreshToken,
     needsPassowrdChange: isUserExist?.needPassChange,
+    userRole: isUserExist?.role,
   };
 };
 
@@ -75,8 +74,6 @@ const changePassword = async (
   const isUserExist = await User.findOne({ email: user.email }).select(
     "+password"
   );
-
-  console.log("IS USER EXIST: ", isUserExist);
 
   if (!isUserExist) {
     throw new Error("User not found");
@@ -129,15 +126,12 @@ const refreshToken = async (refreshToken: string) => {
       refreshToken,
       config.jwt_refresh_secret as string
     ) as JwtPayload;
-    console.log("DECODED: ", decoded);
 
     const role = decoded.role;
 
     const isUserExist = await User.findOne({
       email: decoded.email,
     });
-
-    console.log("IS USER EXIST: ", isUserExist);
 
     if (!isUserExist) {
       throw new Error("User not found");
