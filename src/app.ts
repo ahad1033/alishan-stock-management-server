@@ -12,7 +12,7 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: ["*"],
+    origin: ["https://alishan-stock-management-server.onrender.com"],
     credentials: true,
   })
 );
