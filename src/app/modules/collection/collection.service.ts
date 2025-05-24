@@ -1,32 +1,74 @@
-import { Collection } from "./collection.model";
 import { ICollection } from "./collection.interface";
+
+import { Collection } from "./collection.model";
+import { Balance } from "../balance/balance.model";
 import { Customer } from "../customer/customer.model";
 
 const createCollection = async (data: ICollection, issuedBy: string) => {
-  const { customerId, amount } = data;
+  try {
+    const { customerId, amount } = data;
 
-  // Save the collection record
-  const newCollection = new Collection(data);
-  const savedCollection = await newCollection.save();
+    // Step 1: Fetch customer
+    const customer = await Customer.findById(customerId);
 
-  // Update customer's paid and due amounts
-  await Customer.findByIdAndUpdate(customerId, {
-    $inc: {
-      totalPaidAmount: amount,
-      totalDue: -amount,
-    },
-  });
+    if (!customer) {
+      throw new Error("Customer not found");
+    }
 
-  return savedCollection;
+    // Step 2: Validate amount doesn't exceed due
+    if (amount > customer.totalDue) {
+      throw new Error(`Amount exceeds customer's due (${customer.totalDue})`);
+    }
+
+    // Step 3: Save the collection
+    const newCollection = new Collection({ ...data, issuedBy });
+    const savedCollection = await newCollection.save();
+
+    // Step 4: Update customer's paid and due amounts
+    await Customer.findByIdAndUpdate(customerId, {
+      $inc: {
+        totalPaidAmount: amount,
+        totalDue: -amount,
+      },
+    });
+
+    // Step 5: Update balance
+    await Balance.updateOne(
+      {},
+      {
+        $inc: {
+          totalPaid: amount,
+          currentBalance: amount,
+          totalUnPaid: -amount,
+        },
+      }
+    );
+
+    return savedCollection;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    } else {
+      throw new Error("Failed to create collection: Unknown error");
+    }
+  }
 };
 
 const getCollection = async () => {
-  const collections = await Collection.find()
-    .populate("customerId", "name phone")
-    .populate("issuedBy", "name role")
-    .sort({ createdAt: -1 });
+  try {
+    const collections = await Collection.find()
+      .populate("customerId", "name phone")
+      .populate("issuedBy", "name role")
+      .sort({ createdAt: -1 });
 
-  return collections;
+    return collections;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      throw new Error(error.message);
+    } else {
+      throw new Error("Failed to retrieve collections: Unknown error");
+    }
+  }
 };
 
 export const CollectionServices = {
