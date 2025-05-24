@@ -15,6 +15,7 @@ app.use(
     origin: [
       "http://localhost:5173",
       "https://alishan-stock-management-f8grkqm9m-ahad-ahameds-projects.vercel.app",
+      "https://alishan-stock-management.vercel.app",
     ],
     credentials: true,
   })
