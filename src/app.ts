@@ -12,7 +12,10 @@ app.use(cookieParser());
 
 app.use(
   cors({
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://alishan-stock-management-f8grkqm9m-ahad-ahameds-projects.vercel.app",
+    ],
     credentials: true,
   })
 );

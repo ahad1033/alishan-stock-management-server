@@ -17,6 +17,7 @@ export const createCollectionValidationSchema = z.object({
         invalid_type_error: "Amount must be a number",
       })
       .positive("Amount must be a positive number"),
+    description: z.string().optional(),
     method: z.enum(["cash", "cheque", "mobile_banking", "bank_transfer"], {
       required_error: "Payment method is required",
     }),

@@ -9,6 +9,7 @@ const collectionSchema = new Schema(
     },
     issuedBy: { type: Schema.Types.ObjectId, ref: "User" },
     amount: { type: Number, required: true },
+    description: { type: String },
     method: {
       type: String,
       enum: ["cash", "cheque", "mobile_banking", "bank_transfer"],
