@@ -47,9 +47,15 @@ const deductStockByInvoice = async (req: Request, res: Response) => {
   }
 };
 
-const getStockHistory = async (_req: Request, res: Response) => {
+const getStockHistory = async (req: Request, res: Response) => {
   try {
-    const data = await StockServices.getStockHistory();
+    const { search, fromDate, toDate, invoiceNumber } = req.query;
+
+    const data = await StockServices.getStockHistory({
+      search: search as string,
+      fromDate: fromDate as string,
+      toDate: toDate as string,
+    });
 
     res.status(200).json({
       success: true,

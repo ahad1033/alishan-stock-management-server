@@ -1,9 +1,11 @@
 import mongoose, { Types } from "mongoose";
 
+import { parseDate } from "../../utils/parseDate";
+
+import { Stock } from "./stock.model";
 import { IStock } from "./stock.interface";
 import { Invoice } from "../invoice/invoice.model";
 import { Product } from "../product/product.model";
-import { Stock } from "./stock.model";
 
 const addStock = async (
   productId: string,
@@ -90,11 +92,49 @@ const deductStockByInvoice = async (
   }
 };
 
-const getStockHistory = async () => {
-  return await Stock.find({})
-    .populate("productId", "name")
-    .populate("issuedBy", "name")
-    .sort({ createdAt: -1 });
+const getStockHistory = async (queryParams: {
+  search?: string;
+  fromDate?: string;
+  toDate?: string;
+}) => {
+  try {
+    const { search, fromDate, toDate } = queryParams;
+    const query: any = {};
+
+    // 🔍 Filter by product name (if search provided)
+    if (search) {
+      const matchingProducts = await Product.find({
+        name: { $regex: search, $options: "i" },
+      }).select("_id");
+
+      const matchingProductIds = matchingProducts.map((product) => product._id);
+      query.productId = { $in: matchingProductIds };
+    }
+
+    // 🗓️ Filter by createdAt range
+    const parsedFrom = fromDate ? parseDate(fromDate) : null;
+    const parsedTo = toDate ? parseDate(toDate) : null;
+
+    if (parsedFrom || parsedTo) {
+      query.createdAt = {};
+      if (parsedFrom) query.createdAt.$gte = parsedFrom;
+      if (parsedTo) query.createdAt.$lte = parsedTo;
+    }
+
+    // 📦 Fetch stock history
+    const stockRecords = await Stock.find(query)
+      .populate("productId", "name")
+      .populate("issuedBy", "name")
+      .sort({ createdAt: -1 });
+
+    return stockRecords;
+  } catch (error: unknown) {
+    if (error instanceof Error) {
+      throw new Error("Failed to retrieve stock history: " + error.message);
+    } else {
+      throw new Error("Failed to retrieve stock history: Unknown error");
+    }
+  }
 };
 
 export const StockServices = {
