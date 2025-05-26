@@ -327,7 +327,7 @@ const getInvoice = async (queryParams: {
 const getInvoiceById = async (id: string) => {
   try {
     const invoice = await Invoice.findById(id)
-      .populate("customerId", "name")
+      .populate("customerId")
       .populate("issuedBy", "name")
       .populate("products.productId");
 

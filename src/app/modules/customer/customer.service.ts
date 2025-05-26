@@ -2,6 +2,7 @@ import mongoose from "mongoose";
 
 import { Customer } from "./customer.model";
 import { ICustomer } from "./customer.interface";
+import { Invoice } from "../invoice/invoice.model";
 
 const createCustomer = async (customerData: ICustomer) => {
   try {
@@ -88,10 +89,22 @@ const getCustomerById = async (id: string) => {
       throw new Error("Customer not found");
     }
 
-    return customer;
+    // Fetch invoices for the customer
+    const invoices = await Invoice.find({
+      customerId: id,
+      isDeleted: false,
+    })
+      .sort({ createdAt: -1 })
+      .populate("issuedBy", "name")
+      .populate("products.productId", "name");
+
+    return {
+      ...customer.toObject(),
+      invoices,
+    };
   } catch (error: unknown) {
     if (error instanceof Error) {
-      throw new Error("Failed to retrieve customer: " + error.message);
+      throw new Error(error.message);
     } else {
       throw new Error("Failed to retrieve customer: Unknown error");
     }
