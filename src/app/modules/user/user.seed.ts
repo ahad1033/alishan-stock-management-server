@@ -27,6 +27,6 @@ export const seedSuperAdmin = async () => {
 
   if (!isSuperAdminExits) {
     await User.create(superAdminDataWithHashedPass);
-    console.log("Super admin created successfully!");
+    // console.log("Super admin created successfully!");
   }
 };

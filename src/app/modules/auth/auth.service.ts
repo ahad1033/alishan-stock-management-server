@@ -71,6 +71,7 @@ const changePassword = async (
   user: JwtPayload,
   payload: { oldPassword: string; newPassword: string }
 ) => {
+
   const isUserExist = await User.findOne({ email: user.email }).select(
     "+password"
   );
@@ -102,8 +103,10 @@ const changePassword = async (
     Number(config.bcrypt_salt_rounds)
   );
 
+  const updateRes = await User.findOne({ _id: user?.userId, role: user?.role });
+
   await User.findOneAndUpdate(
-    { id: user?.userId, role: user?.role },
+    { _id: user?.userId, role: user?.role },
     {
       password: newHashedPassword,
       needPassChange: false,
@@ -111,7 +114,7 @@ const changePassword = async (
     }
   );
 
-  return null;
+  return { role: isUserExist?.role };
 };
 
 const refreshToken = async (refreshToken: string) => {

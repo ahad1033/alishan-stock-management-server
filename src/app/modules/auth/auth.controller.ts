@@ -36,14 +36,14 @@ const changePassword = async (req: Request, res: Response) => {
   try {
     const { ...passwordData } = req.body;
 
-    console.log("REQUEST FROM FRONTEND: ", req);
+    const user = req.user;
 
-    const user = await AuthService.changePassword(req, passwordData);
+    const response = await AuthService.changePassword(user, passwordData);
 
     res.status(200).json({
       success: true,
       message: "Password is updated successfully!",
-      data: user,
+      data: response,
     });
   } catch (error) {
     let errorMessage = "Something went wrong!";

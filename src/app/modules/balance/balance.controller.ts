@@ -5,8 +5,6 @@ const getBalance = async (req: Request, res: Response) => {
   try {
     const expenses = await BalanceServices.getBalance();
 
-    console.log("expenses :", expenses);
-
     res.status(200).json({
       success: true,
       message: "Expenses retrieved successfully!",

@@ -257,8 +257,6 @@ const getInvoice = async (queryParams: {
         .populate("issuedBy", "name")
         .lean();
 
-      console.log("invoice from db: ", invoice);
-
       if (!invoice) return [];
 
       const customer = invoice.customerId as { name?: string };
