@@ -327,7 +327,8 @@ const getInvoice = async (queryParams: {
 const getInvoiceById = async (id: string) => {
   try {
     const invoice = await Invoice.findById(id)
-      .populate("customerId")
+      .populate("customerId", "name")
+      .populate("issuedBy", "name")
       .populate("products.productId");
 
     if (!invoice || invoice.isDeleted) {

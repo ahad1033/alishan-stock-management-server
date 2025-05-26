@@ -83,9 +83,14 @@ const deleteExpense = async (req: Request, res: Response) => {
 
 const getExpense = async (req: Request, res: Response) => {
   try {
-    const classParam = req.query.name as string | undefined;
+    const { search, fromDate, toDate, category } = req.query;
 
-    const expenses = await ExpenseServices.getExpense(classParam);
+    const expenses = await ExpenseServices.getExpense({
+      search: search as string,
+      fromDate: fromDate as string,
+      toDate: toDate as string,
+      category: category as string,
+    });
 
     res.status(200).json({
       success: true,

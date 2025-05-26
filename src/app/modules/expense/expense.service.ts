@@ -4,6 +4,7 @@ import { Expense } from "./expense.model";
 import { IExpense } from "./expense.interface";
 import { Balance } from "../balance/balance.model";
 import { Employee } from "../employee/employee.model";
+import { parseDate } from "../../utils/parseDate";
 
 const addExpense = async (expenseData: IExpense, issuedBy: string) => {
   const session = await mongoose.startSession();
@@ -228,21 +229,51 @@ const deleteExpense = async (id: string) => {
   }
 };
 
-const getExpense = async (classParam?: string) => {
+const getExpense = async (queryParams: {
+  search?: string;
+  fromDate?: string;
+  toDate?: string;
+  category?: string;
+}) => {
   try {
-    const query: any = { isDeleted: false };
+    const { search, fromDate, toDate, category } = queryParams;
+    const query: any = {};
 
-    if (classParam) {
-      query.category = classParam;
+    // Filter by description (string) or amount (number)
+    if (search) {
+      const searchRegex = new RegExp(search, "i");
+      const parsedAmount = Number(search);
+      const isNumber = !isNaN(parsedAmount);
+
+      query.$or = [
+        { description: { $regex: searchRegex } },
+        ...(isNumber ? [{ amount: parsedAmount }] : []),
+      ];
     }
 
+    // 📂 Filter by category (exact lowercase match)
+    if (category) {
+      query.category = category.toLowerCase();
+    }
+
+    // Filter by createdAt range
+    const parsedFrom = fromDate ? parseDate(fromDate) : null;
+    const parsedTo = toDate ? parseDate(toDate) : null;
+
+    if (parsedFrom || parsedTo) {
+      query.createdAt = {};
+      if (parsedFrom) query.createdAt.$gte = parsedFrom;
+      if (parsedTo) query.createdAt.$lte = parsedTo;
+    }
+
+    // Fetch expenses
     const expenses = await Expense.find(query)
       .sort({ createdAt: -1 })
       .populate("employeeId", "name")
       .populate("issuedBy", "name")
       .lean();
 
-    // Now return each expense with extracted names
+    // Attach readable names
     return expenses.map((expense) => {
       const employee = expense.employeeId as { name?: string };
       const user = expense.issuedBy as { name?: string };
