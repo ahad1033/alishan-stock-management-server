@@ -8,7 +8,6 @@ import { Invoice } from "./invoice.model";
 import { Balance } from "../balance/balance.model";
 import { Product } from "../product/product.model";
 import { Customer } from "../customer/customer.model";
-import { createOrUpdateBalance } from "../balance/balance.service";
 
 const createInvoice = async (invoiceData: IInvoice) => {
   const session = await mongoose.startSession();
@@ -59,8 +58,22 @@ const createInvoice = async (invoiceData: IInvoice) => {
       );
     }
 
-    // Step 5: Create or update balance
-    await createOrUpdateBalance(paidAmount, dueAmount, session);
+    // Step 5: Update balance
+    const balance = await Balance.findOneAndUpdate(
+      {},
+      {
+        $inc: {
+          totalPaid: paidAmount,
+          totalUnPaid: dueAmount,
+          currentBalance: paidAmount,
+        },
+      },
+      { session, new: true }
+    );
+
+    if (!balance) {
+      throw new Error("Balance document not found. Please seed it first.");
+    }
 
     // Commit transaction
     await session.commitTransaction();

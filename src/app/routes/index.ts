@@ -9,11 +9,16 @@ import { ExpenseRoutes } from "../modules/expense/expense.route";
 import { BalanceRoutes } from "../modules/balance/balance.route";
 import { CustomerRoutes } from "../modules/customer/customer.route";
 import { EmployeeRoutes } from "../modules/employee/employee.route";
+import { AnalyticsRoutes } from "../modules/analytics/analytics.route";
 import { CollectionRoutes } from "../modules/collection/collection.route";
 
 const router = Router();
 
 const moduleRoutes = [
+  {
+    path: "/analytics",
+    route: AnalyticsRoutes,
+  },
   {
     path: "/collections",
     route: CollectionRoutes,
