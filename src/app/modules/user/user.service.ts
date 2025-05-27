@@ -27,7 +27,7 @@ const createUser = async (userData: IUser) => {
 
     // Create the user
     const user = new User(userWithHashedPassword);
-    
+
     return await user.save();
   } catch (error) {
     throw error;
@@ -91,10 +91,35 @@ const updateUserById = async (userId: string, updateData: Partial<IUser>) => {
   }
 };
 
+const resetUserPassword = async (userId: string, newPassword: string) => {
+  try {
+    const user = await User.findOne({ _id: userId, isDeleted: false });
+    
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    const hashedPassword = await bcrypt.hash(
+      newPassword,
+      parseInt(config.bcrypt_salt_rounds, 10)
+    );
+
+    user.password = hashedPassword;
+    user.needPassChange = true;
+
+    await user.save();
+
+    return user;
+  } catch (error) {
+    throw new Error("Failed to reset user password");
+  }
+};
+
 export const UserServices = {
   createUser,
   getAllUser,
   getUserById,
   deleteUserById,
   updateUserById,
+  resetUserPassword
 };

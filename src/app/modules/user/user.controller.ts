@@ -105,10 +105,35 @@ const updateUserById = async (req: Request, res: Response) => {
   }
 };
 
+const resetUserPassword = async (req: Request, res: Response) => {
+  try {
+    const { userId, password } = req.body;
+
+    const user = await UserServices.resetUserPassword(userId, password);
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successfully",
+      data: user,
+    });
+  } catch (error) {
+    let errorMessage = "Something went wrong!";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    res.status(500).json({
+      success: false,
+      message: "Failed to reset password",
+      error: errorMessage,
+    });
+  }
+};
+
 export const UserControllers = {
   createUser,
   getAllUser,
   getUserById,
   deleteUserById,
   updateUserById,
+  resetUserPassword,
 };

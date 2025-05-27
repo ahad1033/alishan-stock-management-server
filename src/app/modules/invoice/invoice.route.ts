@@ -35,14 +35,24 @@ router.delete(
 // GET ALL INVOICE
 router.get(
   "/get-all-invoice",
-  authMiddleware(USER_ROLE.super_admin, USER_ROLE.admin, USER_ROLE.accountant),
+  authMiddleware(
+    USER_ROLE.super_admin,
+    USER_ROLE.admin,
+    USER_ROLE.accountant,
+    USER_ROLE.stock_manager
+  ),
   InvoiceControllers.getInvoice
 );
 
 // GET A INVOICE BY ID
 router.get(
   "/get-single-invoice/:id",
-  authMiddleware(USER_ROLE.super_admin, USER_ROLE.admin, USER_ROLE.accountant),
+  authMiddleware(
+    USER_ROLE.super_admin,
+    USER_ROLE.admin,
+    USER_ROLE.accountant,
+    USER_ROLE.stock_manager
+  ),
   InvoiceControllers.getInvoiceById
 );
 

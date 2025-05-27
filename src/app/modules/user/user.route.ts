@@ -45,4 +45,11 @@ router.patch(
   UserControllers.updateUserById
 );
 
+// RESET USER
+router.patch(
+  "/reset-user",
+  authMiddleware(USER_ROLE.super_admin, USER_ROLE.admin),
+  UserControllers.resetUserPassword
+);
+
 export const UserRoutes = router;
