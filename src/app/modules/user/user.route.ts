@@ -27,7 +27,12 @@ router.get(
 // GET A USER BY ID
 router.get(
   "/get-single-user/:id",
-  authMiddleware(USER_ROLE.super_admin, USER_ROLE.admin),
+  authMiddleware(
+    USER_ROLE.super_admin,
+    USER_ROLE.admin,
+    USER_ROLE.accountant,
+    USER_ROLE.stock_manager
+  ),
   UserControllers.getUserById
 );
 
@@ -41,7 +46,12 @@ router.delete(
 // UPDATE A USER BY ID
 router.patch(
   "/update-user/:id",
-  authMiddleware(USER_ROLE.super_admin, USER_ROLE.admin),
+  authMiddleware(
+    USER_ROLE.super_admin,
+    USER_ROLE.admin,
+    USER_ROLE.accountant,
+    USER_ROLE.stock_manager
+  ),
   UserControllers.updateUserById
 );
 
