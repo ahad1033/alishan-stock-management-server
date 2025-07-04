@@ -3,6 +3,7 @@ import { z } from "zod";
 const createProductZodSchema = z.object({
   body: z.object({
     name: z.string({ required_error: "Name is required" }).trim(),
+    image: z.string({ required_error: "Image is required" }).trim(),
     description: z.string().optional(),
     sku: z.string({ required_error: "SKU is required" }).trim(),
     price: z
@@ -25,6 +26,7 @@ const createProductZodSchema = z.object({
 const editProductZodSchema = z.object({
   body: z.object({
     name: z.string().nonempty("Name is required").optional(),
+    image: z.string().nonempty("Image is required").optional(),
     description: z.string().nonempty("Description is required").optional(),
     sku: z.string().optional(),
     price: z
