@@ -18,6 +18,24 @@ const getSalesSummary = async (_req: Request, res: Response) => {
   }
 };
 
+const getMonthlySalesSummary = async (_req: Request, res: Response) => {
+  try {
+    const data = await AnalyticsServices.getMonthlySalesSummary();
+
+    res.json({ success: true, data });
+  } catch (error) {
+    let errorMessage = "Something went wrong!";
+    if (error instanceof Error) {
+      errorMessage = error.message;
+    }
+    res.status(500).json({
+      success: false,
+      message: errorMessage,
+      error: errorMessage,
+    });
+  }
+};
+
 const getExpenseAnalytics = async (_req: Request, res: Response) => {
   try {
     const data = await AnalyticsServices.getRecentExpensesAnalytics();
@@ -39,4 +57,5 @@ const getExpenseAnalytics = async (_req: Request, res: Response) => {
 export const AnalyticsControllers = {
   getSalesSummary,
   getExpenseAnalytics,
+  getMonthlySalesSummary,
 };

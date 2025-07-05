@@ -7,6 +7,12 @@ const router = express.Router();
 // SALES SUMMERY
 router.get("/sales-summary", AnalyticsControllers.getSalesSummary);
 
+// MONTHLY SALES SUMMERY
+router.get(
+  "/monthly-sales-summary",
+  AnalyticsControllers.getMonthlySalesSummary
+);
+
 // RECENT EXPENSES
 router.get("/recent-expenses", AnalyticsControllers.getExpenseAnalytics);
 
